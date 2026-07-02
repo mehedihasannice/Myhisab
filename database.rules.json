@@ -13,6 +13,22 @@
         }
       }
     },
+    "pendingRequests": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$uid": {
+        ".write": "auth != null && ((auth.uid === $uid && !root.child('users').child(auth.uid).exists()) || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".validate": "newData.hasChildren(['email', 'name', 'requestedAt'])",
+        "email": {
+          ".validate": "newData.isString()"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "requestedAt": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
     "personal": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
