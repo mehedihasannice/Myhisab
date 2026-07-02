@@ -237,12 +237,12 @@
   } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js';
   import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js';
 
-  // ⚠️ pipeline-test.html-এ যে চারটা value বসিয়েছিলে, হুবহু সেগুলোই এখানে বসাও।
+  // ⚠️ শুধুমাত্র "YOUR_FIREBASE_WEB_API_KEY"-এর জায়গায় আপনার আসল এপিআই কী-টি বসান। বাকি ৩টি অটোমেটিক সেট করা আছে।
   const firebaseConfig = {
-    apiKey: "YOUR_FIREBASE_WEB_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "YOUR_FIREBASE_DB_URL",
-    projectId: "YOUR_PROJECT_ID"
+    apiKey: "AIzaSyBmWURw03HyycLImNR-erXY_AAHY9jRDP0", 
+    authDomain: "my-hisab-d6f6d.firebaseapp.com",
+    databaseURL: "https://my-hisab-d6f6d-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    projectId: "my-hisab-d6f6d"
   };
 
   const app = initializeApp(firebaseConfig);
@@ -288,7 +288,6 @@
     errorEl.style.display = 'none';
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // সফল হলে onAuthStateChanged নিজেই screen বদলে দেবে, এখানে কিছু করার দরকার নেই।
     } catch (err) {
       errorEl.textContent = friendlyAuthError(err);
       errorEl.style.display = 'block';
@@ -303,8 +302,6 @@
     errorEl.style.display = 'none';
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      // নতুন account RTDB-তে provisioned না থাকায় onAuthStateChanged
-      // এটাকে pending screen-এ পাঠাবে — এটাই কাম্য আচরণ।
     } catch (err) {
       errorEl.textContent = friendlyAuthError(err);
       errorEl.style.display = 'block';
@@ -329,16 +326,12 @@
     modeLabel.textContent = 'Business';
   });
 
-  // পুরো app-টা এই একটা observer দিয়ে চালিত — login/logout/page-load
-  // সব ক্ষেত্রেই এটাই ঠিক করে দেয় কোন screen দেখানো হবে।
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
       showOnly(authSection);
       return;
     }
     try {
-      // এখানে user-এর নিজের idToken auto ব্যবহার হচ্ছে (SDK নিজেই সামলায়) —
-      // Worker-এ যেমন REST দিয়ে করেছিলাম, এখানে SDK দিয়ে একই rule মেনে হচ্ছে।
       const snap = await get(ref(db, `users/${user.uid}`));
       if (snap.exists()) {
         const data = snap.val();
@@ -349,11 +342,11 @@
         showOnly(pendingSection);
       }
     } catch (err) {
-      // RTDB read fail করলে ভুল করে app খুলে দেওয়ার চেয়ে pending দেখানো নিরাপদ।
       showOnly(pendingSection);
     }
   });
 </script>
 
 </body>
-</html>
+      </html>
+      
