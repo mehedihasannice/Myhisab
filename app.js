@@ -16,6 +16,36 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+// --- Theme (day/night) ---
+// localStorage try-catch দিয়ে wrap করা — private browsing বা storage
+// ব্লক থাকা অবস্থাতেও যেন পুরো app ভেঙে না পড়ে, শুধু persist না হোক।
+const themeToggleBtn = document.getElementById('theme-toggle');
+const themeColorMeta = document.getElementById('theme-color-meta');
+
+function getPreferredTheme() {
+  try {
+    const stored = localStorage.getItem('myhisab-theme');
+    if (stored === 'light' || stored === 'dark') return stored;
+  } catch (e) { /* fallback নিচে */ }
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  themeColorMeta.setAttribute('content', theme === 'dark' ? '#000000' : '#FFFFFF');
+  try {
+    localStorage.setItem('myhisab-theme', theme);
+  } catch (e) { /* non-critical */ }
+}
+
+applyTheme(getPreferredTheme());
+themeToggleBtn.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+// --- Section switching ---
 const authSection = document.getElementById('auth-section');
 const pendingSection = document.getElementById('pending-section');
 const appSection = document.getElementById('app-section');
@@ -26,10 +56,6 @@ function showOnly(section) {
   [authSection, pendingSection, appSection].forEach(s => s.classList.add('hidden'));
   section.classList.remove('hidden');
 }
-
-// user-এর দেওয়া নাম/email textContent আর dataset দিয়ে বসানো হয় (নিচে),
-// innerHTML string জোড়া না দেওয়ায় আলাদা করে escape করার দরকার নেই —
-// browser নিজেই এই দুটো API-তে raw text হিসেবে safe ভাবে handle করে।
 
 async function loadPendingRequests() {
   pendingListEl.innerHTML = '';
@@ -83,8 +109,6 @@ pendingListEl.addEventListener('click', async (e) => {
   btn.disabled = true;
   btn.textContent = '...';
   try {
-    // নতুন member হিসেবেই approve হয় — admin বানাতে হলে এখনো
-    // Firebase Console-এ গিয়েই করতে হবে, ইচ্ছাকৃতভাবে।
     await set(ref(db, `users/${uid}`), { name: name, role: 'member' });
     await remove(ref(db, `pendingRequests/${uid}`));
     loadPendingRequests();
@@ -125,7 +149,6 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   errorEl.style.display = 'none';
   try {
     await signInWithEmailAndPassword(auth, email, password);
-    // সফল হলে onAuthStateChanged নিজেই screen বদলে দেবে, এখানে কিছু করার দরকার নেই।
   } catch (err) {
     errorEl.textContent = friendlyAuthError(err);
     errorEl.style.display = 'block';
@@ -141,14 +164,11 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
   errorEl.style.display = 'none';
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
-    // admin panel-এ দেখানোর জন্য pending request লিখে রাখি — rule অনুযায়ী
-    // নিজের uid-তে লেখা যায়, যতক্ষণ না /users-এ provisioned হয়।
     await set(ref(db, `pendingRequests/${cred.user.uid}`), {
       name: name,
       email: email,
       requestedAt: Date.now()
     });
-    // onAuthStateChanged নিজেই pending screen দেখিয়ে দেবে।
   } catch (err) {
     errorEl.textContent = friendlyAuthError(err);
     errorEl.style.display = 'block';
@@ -158,36 +178,39 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
 document.getElementById('pending-logout-btn').addEventListener('click', () => signOut(auth));
 document.getElementById('app-logout-btn').addEventListener('click', () => signOut(auth));
 
+// --- Personal/Business sliding toggle ---
 const tabPersonal = document.getElementById('tab-personal');
 const tabBusiness = document.getElementById('tab-business');
+const segmentIndicator = document.getElementById('segment-indicator');
 const modeLabel = document.getElementById('ledger-mode-label');
 
 tabPersonal.addEventListener('click', () => {
   tabPersonal.classList.add('active');
   tabBusiness.classList.remove('active');
+  segmentIndicator.classList.remove('business');
   modeLabel.textContent = 'Personal';
 });
 tabBusiness.addEventListener('click', () => {
   tabBusiness.classList.add('active');
   tabPersonal.classList.remove('active');
+  segmentIndicator.classList.add('business');
   modeLabel.textContent = 'Business';
 });
 
-// পুরো app-টা এই একটা observer দিয়ে চালিত — login/logout/page-load
-// সব ক্ষেত্রেই এটাই ঠিক করে দেয় কোন screen দেখানো হবে।
+// --- Auth state observer: drives which screen shows ---
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     showOnly(authSection);
     return;
   }
   try {
-    // এখানে user-এর নিজের idToken auto ব্যবহার হচ্ছে (SDK নিজেই সামলায়) —
-    // Worker-এ যেমন REST দিয়ে করেছিলাম, এখানে SDK দিয়ে একই rule মেনে হচ্ছে।
     const snap = await get(ref(db, `users/${user.uid}`));
     if (snap.exists()) {
       const data = snap.val();
+      const roleBadgeEl = document.getElementById('who-role');
       document.getElementById('who-name').textContent = data.name || user.email;
-      document.getElementById('who-role').textContent = data.role === 'admin' ? 'Admin' : 'Member';
+      roleBadgeEl.textContent = data.role === 'admin' ? 'Admin' : 'Member';
+      roleBadgeEl.className = 'role-badge ' + (data.role === 'admin' ? 'admin' : 'member');
       showOnly(appSection);
       if (data.role === 'admin') {
         adminPanel.classList.remove('hidden');
@@ -199,7 +222,6 @@ onAuthStateChanged(auth, async (user) => {
       showOnly(pendingSection);
     }
   } catch (err) {
-    // RTDB read fail করলে ভুল করে app খুলে দেওয়ার চেয়ে pending দেখানো নিরাপদ।
     showOnly(pendingSection);
   }
 });

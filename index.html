@@ -3,13 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#FFFFFF" id="theme-color-meta">
 <title>Myhisab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
 
 <div class="brand">Myhisab</div>
 <div class="tagline">কথায় কথায় হিসাব</div>
@@ -62,9 +65,10 @@
     <div id="pending-list"></div>
   </div>
 
-  <div class="ledger-toggle">
-    <button type="button" class="ledger-tab active" id="tab-personal">Personal</button>
-    <button type="button" class="ledger-tab" id="tab-business">Business</button>
+  <div class="segmented-toggle" id="ledger-toggle">
+    <div class="segment-indicator" id="segment-indicator"></div>
+    <button type="button" class="segment active" id="tab-personal">Personal</button>
+    <button type="button" class="segment" id="tab-business">Business</button>
   </div>
 
   <div class="placeholder-box">
