@@ -166,7 +166,7 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 150px; /* bottom-nav + chat-input-bar clearance */
+  padding-bottom: 80px; /* chat-input-bar clearance */
 }
 
 .segmented-toggle {
@@ -205,8 +205,6 @@ button:focus-visible {
 }
 .segment.active { color: var(--accent-text); }
 
-.view-panel { width: 100%; display: flex; flex-direction: column; align-items: center; }
-
 /* ===== Dashboard ===== */
 .dashboard-grid {
   display: flex;
@@ -214,6 +212,7 @@ button:focus-visible {
   gap: 10px;
   width: 100%;
   max-width: 420px;
+  margin-bottom: 16px;
 }
 .stat-card {
   background: var(--surface);
@@ -234,7 +233,7 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-height: 120px;
+  min-height: 60px;
 }
 .entry-item {
   display: flex;
@@ -284,15 +283,16 @@ button:focus-visible {
 
 .empty-note { color: var(--text-secondary); font-size: 13px; font-style: italic; }
 
-/* ===== Chat input bar (sits just above bottom-nav) ===== */
+/* ===== Chat input bar (fixed at bottom) ===== */
 .chat-input-bar {
   position: fixed;
-  bottom: 60px;
+  bottom: 0;
   left: 0;
   right: 0;
   background: var(--bg);
   border-top: 1px solid var(--border);
   padding: 10px 16px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
   display: flex;
   gap: 8px;
   max-width: 420px;
@@ -312,36 +312,6 @@ button:focus-visible {
   padding: 0;
 }
 .send-btn:disabled { opacity: 0.6; }
-
-/* ===== Bottom navigation ===== */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: var(--bg);
-  border-top: 1px solid var(--border);
-  display: flex;
-  max-width: 420px;
-  margin: 0 auto;
-  z-index: 20;
-}
-.nav-btn {
-  flex: 1;
-  background: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 600;
-}
-.nav-icon { font-size: 18px; }
-.nav-label { font-size: 11px; }
-.nav-btn.active { color: var(--accent); }
 
 /* ===== Settings bottom sheet ===== */
 .settings-overlay, .confirm-overlay {

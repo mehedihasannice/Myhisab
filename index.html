@@ -62,50 +62,30 @@
     <button type="button" class="segment" id="tab-business">Business</button>
   </div>
 
-  <!-- View: Dashboard -->
-  <div class="view-panel hidden" id="view-dashboard">
-    <div class="dashboard-grid">
-      <div class="stat-card income">
-        <div class="stat-label">এই মাসের আয়</div>
-        <div class="stat-value" id="stat-income">৳0</div>
-      </div>
-      <div class="stat-card expense">
-        <div class="stat-label">এই মাসের খরচ</div>
-        <div class="stat-value" id="stat-expense">৳0</div>
-      </div>
-      <div class="stat-card balance">
-        <div class="stat-label">বর্তমান ব্যালেন্স</div>
-        <div class="stat-value" id="stat-balance">৳0</div>
-      </div>
+  <!-- Dashboard — সবসময় দেখা যায় -->
+  <div class="dashboard-grid" id="view-dashboard">
+    <div class="stat-card income">
+      <div class="stat-label">এই মাসের আয়</div>
+      <div class="stat-value" id="stat-income">৳0</div>
+    </div>
+    <div class="stat-card expense">
+      <div class="stat-label">এই মাসের খরচ</div>
+      <div class="stat-value" id="stat-expense">৳0</div>
+    </div>
+    <div class="stat-card balance">
+      <div class="stat-label">বর্তমান ব্যালেন্স</div>
+      <div class="stat-value" id="stat-balance">৳0</div>
     </div>
   </div>
 
-  <!-- View: History (পরের ধাপে আসছে) -->
-  <div class="view-panel hidden" id="view-history">
-    <div class="placeholder-box">History (দিন/মাস/বছর filter + chart সহ) পরের ধাপে আসছে।</div>
-  </div>
+  <!-- Chat feed — dashboard-এর ঠিক নিচে -->
+  <div class="chat-feed" id="chat-feed"></div>
 
-  <!-- View: Chat -->
-  <div class="view-panel" id="view-chat">
-    <div class="chat-feed" id="chat-feed"></div>
-  </div>
-
+  <!-- Text input bar — fixed at bottom -->
   <form id="chat-form" class="chat-input-bar">
     <input type="text" id="chat-input" placeholder="যেমন: ৫০ টাকার চা খেয়েছি" autocomplete="off" required>
     <button type="submit" class="send-btn" id="chat-send-btn" aria-label="Send">➤</button>
   </form>
-
-  <nav class="bottom-nav">
-    <button type="button" class="nav-btn active" data-view="chat">
-      <span class="nav-icon">💬</span><span class="nav-label">Chat</span>
-    </button>
-    <button type="button" class="nav-btn" data-view="dashboard">
-      <span class="nav-icon">📊</span><span class="nav-label">Dashboard</span>
-    </button>
-    <button type="button" class="nav-btn" data-view="history">
-      <span class="nav-icon">🕒</span><span class="nav-label">History</span>
-    </button>
-  </nav>
 
   <!-- Settings bottom sheet -->
   <div class="settings-overlay hidden" id="settings-overlay">

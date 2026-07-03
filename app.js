@@ -108,16 +108,11 @@ function reportInitError(context, err) {
     const statIncome = document.getElementById('stat-income');
     const statExpense = document.getElementById('stat-expense');
     const statBalance = document.getElementById('stat-balance');
-    const navButtons = document.querySelectorAll('.nav-btn');
-    const viewPanels = {
-      chat: document.getElementById('view-chat'),
-      dashboard: document.getElementById('view-dashboard'),
-      history: document.getElementById('view-history')
-    };
 
     if (!authSection || !pendingSection || !appSection || !adminPanel || !pendingListEl ||
         !tabPersonal || !tabBusiness || !segmentIndicator || !chatFeed || !chatForm ||
-        !confirmOverlay || !settingsBtn || !settingsOverlay) {
+        !confirmOverlay || !settingsBtn || !settingsOverlay ||
+        !statIncome || !statExpense || !statBalance) {
       throw new Error('মূল app-এর কোনো element পাওয়া যায়নি');
     }
 
@@ -155,19 +150,6 @@ function reportInitError(context, err) {
     settingsBtn.addEventListener('click', () => settingsOverlay.classList.remove('hidden'));
     settingsOverlay.addEventListener('click', (e) => {
       if (e.target === settingsOverlay) settingsOverlay.classList.add('hidden');
-    });
-
-    // ================= Bottom nav (view switching) =================
-    navButtons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const view = btn.dataset.view;
-        navButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        Object.keys(viewPanels).forEach((key) => {
-          if (viewPanels[key]) viewPanels[key].classList.toggle('hidden', key !== view);
-        });
-        chatForm.classList.toggle('hidden', view !== 'chat');
-      });
     });
 
     // ================= Admin: pending approvals =================
