@@ -12,10 +12,11 @@
 </head>
 <body>
 
+<!-- শুধু auth/pending screen-এ দেখা যায়, main app-এ ঢুকলে settings panel-ই এটার জায়গা নেয় -->
 <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
 
-<div class="brand">Myhisab</div>
-<div class="tagline">কথায় কথায় হিসাব</div>
+<div class="brand" id="brand">Myhisab</div>
+<div class="tagline" id="tagline">কথায় কথায় হিসাব</div>
 
 <!-- অবস্থা ১: login/signup -->
 <div id="auth-section" class="card">
@@ -50,20 +51,10 @@
   <button class="logout-btn" id="pending-logout-btn">লগআউট</button>
 </div>
 
-<!-- অবস্থা ৩: provisioned, main app shell -->
+<!-- অবস্থা ৩: headerless main app -->
 <div id="app-section" class="app-wrap hidden">
-  <div class="app-header">
-    <div>
-      <span class="who" id="who-name"></span>
-      <span class="role-badge" id="who-role"></span>
-    </div>
-    <button class="logout-btn" id="app-logout-btn">লগআউট</button>
-  </div>
 
-  <div class="admin-panel hidden" id="admin-panel">
-    <div class="admin-panel-title">Pending Approvals</div>
-    <div id="pending-list"></div>
-  </div>
+  <button type="button" id="settings-btn" class="settings-btn" aria-label="Settings">⚙️</button>
 
   <div class="segmented-toggle" id="ledger-toggle">
     <div class="segment-indicator" id="segment-indicator"></div>
@@ -71,13 +62,74 @@
     <button type="button" class="segment" id="tab-business">Business</button>
   </div>
 
-  <div class="chat-feed" id="chat-feed"></div>
+  <!-- View: Dashboard -->
+  <div class="view-panel hidden" id="view-dashboard">
+    <div class="dashboard-grid">
+      <div class="stat-card income">
+        <div class="stat-label">এই মাসের আয়</div>
+        <div class="stat-value" id="stat-income">৳0</div>
+      </div>
+      <div class="stat-card expense">
+        <div class="stat-label">এই মাসের খরচ</div>
+        <div class="stat-value" id="stat-expense">৳0</div>
+      </div>
+      <div class="stat-card balance">
+        <div class="stat-label">বর্তমান ব্যালেন্স</div>
+        <div class="stat-value" id="stat-balance">৳0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View: History (পরের ধাপে আসছে) -->
+  <div class="view-panel hidden" id="view-history">
+    <div class="placeholder-box">History (দিন/মাস/বছর filter + chart সহ) পরের ধাপে আসছে।</div>
+  </div>
+
+  <!-- View: Chat -->
+  <div class="view-panel" id="view-chat">
+    <div class="chat-feed" id="chat-feed"></div>
+  </div>
 
   <form id="chat-form" class="chat-input-bar">
     <input type="text" id="chat-input" placeholder="যেমন: ৫০ টাকার চা খেয়েছি" autocomplete="off" required>
     <button type="submit" class="send-btn" id="chat-send-btn" aria-label="Send">➤</button>
   </form>
 
+  <nav class="bottom-nav">
+    <button type="button" class="nav-btn active" data-view="chat">
+      <span class="nav-icon">💬</span><span class="nav-label">Chat</span>
+    </button>
+    <button type="button" class="nav-btn" data-view="dashboard">
+      <span class="nav-icon">📊</span><span class="nav-label">Dashboard</span>
+    </button>
+    <button type="button" class="nav-btn" data-view="history">
+      <span class="nav-icon">🕒</span><span class="nav-label">History</span>
+    </button>
+  </nav>
+
+  <!-- Settings bottom sheet -->
+  <div class="settings-overlay hidden" id="settings-overlay">
+    <div class="settings-card">
+      <div class="settings-user">
+        <span class="who" id="who-name"></span>
+        <span class="role-badge" id="who-role"></span>
+      </div>
+
+      <button type="button" class="settings-row" id="theme-toggle-row">
+        <span>থিম</span>
+        <span id="theme-toggle-label">🌙 Dark Mode</span>
+      </button>
+
+      <div class="admin-panel hidden" id="admin-panel">
+        <div class="admin-panel-title">Pending Approvals</div>
+        <div id="pending-list"></div>
+      </div>
+
+      <button type="button" class="logout-btn" id="app-logout-btn">লগআউট</button>
+    </div>
+  </div>
+
+  <!-- Confirm card -->
   <div class="confirm-overlay hidden" id="confirm-overlay">
     <div class="confirm-card">
       <div class="confirm-title">যাচাই করো</div>
@@ -89,7 +141,7 @@
         <button type="button" class="type-btn type-income" id="confirm-type-income">Income</button>
       </div>
       <label for="confirm-category">Category</label>
-      <input type="text" id="confirm-category">
+      <select id="confirm-category"></select>
       <label for="confirm-date">Date</label>
       <input type="date" id="confirm-date">
       <label for="confirm-note">Note</label>
@@ -100,6 +152,7 @@
       </div>
     </div>
   </div>
+
 </div>
 
 <script type="module" src="app.js"></script>

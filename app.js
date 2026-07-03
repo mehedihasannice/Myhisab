@@ -4,8 +4,7 @@ import {
   createUserWithEmailAndPassword, signOut
 } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js';
 import {
-  getDatabase, ref, get, set, remove, push,
-  query, orderByChild, limitToLast, onValue
+  getDatabase, ref, get, set, remove, push, onValue
 } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js';
 
 const firebaseConfig = {
@@ -15,8 +14,15 @@ const firebaseConfig = {
   projectId: "my-hisab-d6f6d"
 };
 
-// Worker test-এ যে URL confirm হয়েছিল সেটাই — বদলে গেলে এখানে বদলাও।
 const WORKER_URL = "https://accounting-bot-parser.mehedihasan-nice96.workers.dev";
+
+// worker/index.js-এর CATEGORIES-এর সাথে হুবহু মিলিয়ে রাখা — এখানে category
+// বদলালে ওখানেও বদলাতে হবে, নাহলে icon না মেলার ঝুঁকি থাকে।
+const CATEGORY_ICONS = {
+  "খাবার": "🍽️", "বাজার": "🛒", "যাতায়াত": "🚗", "বাড়িভাড়া": "🏠",
+  "বিল": "💡", "চিকিৎসা": "💊", "শিক্ষা": "📚", "কেনাকাটা": "🛍️",
+  "বিনোদন": "🎬", "বেতন": "💰", "ব্যবসা": "💼", "বিবিধ": "📌"
+};
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -32,14 +38,16 @@ function reportInitError(context, err) {
   document.body.appendChild(banner);
 }
 
-// --- Theme (day/night) — সম্পূর্ণ independent, data layer-এর সাথে সম্পর্ক নেই ---
+// --- Theme (day/night) — independent, কিন্তু এখন দুই জায়গায় trigger থাকতে
+// পারে: pre-login floating button, আর post-login settings panel-এর row।
+// দুটোর যেটা DOM-এ থাকে (element পাওয়া গেলে) সেটাতেই listener বসে।
 (function initTheme() {
   try {
-    const themeToggleBtn = document.getElementById('theme-toggle');
+    const floatingBtn = document.getElementById('theme-toggle');
     const themeColorMeta = document.getElementById('theme-color-meta');
-    if (!themeToggleBtn || !themeColorMeta) {
-      throw new Error('theme-toggle বা theme-color-meta element পাওয়া যায়নি');
-    }
+    const settingsRow = document.getElementById('theme-toggle-row');
+    const settingsLabel = document.getElementById('theme-toggle-label');
+    if (!themeColorMeta) throw new Error('theme-color-meta element পাওয়া যায়নি');
 
     function getPreferredTheme() {
       try {
@@ -51,31 +59,32 @@ function reportInitError(context, err) {
 
     function applyTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme);
-      themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+      if (floatingBtn) floatingBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+      if (settingsLabel) settingsLabel.textContent = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
       themeColorMeta.setAttribute('content', theme === 'dark' ? '#000000' : '#FFFFFF');
-      try {
-        localStorage.setItem('myhisab-theme', theme);
-      } catch (e) {}
+      try { localStorage.setItem('myhisab-theme', theme); } catch (e) {}
     }
 
     applyTheme(getPreferredTheme());
-    themeToggleBtn.addEventListener('click', () => {
+
+    function toggle() {
       const current = document.documentElement.getAttribute('data-theme');
       applyTheme(current === 'dark' ? 'light' : 'dark');
-    });
+    }
+    if (floatingBtn) floatingBtn.addEventListener('click', toggle);
+    if (settingsRow) settingsRow.addEventListener('click', toggle);
   } catch (err) {
     reportInitError('theme', err);
   }
 })();
 
-// --- বাকি সব: auth, admin panel, ledger toggle, chat, confirm card ---
-// এগুলো সব data layer-এর সাথে জড়িত (কোন ledger active তার উপর feed/save
-// নির্ভর করে), তাই একটা block-এই রাখা হয়েছে।
+// --- বাকি সব: auth, settings/admin panel, ledger toggle, dashboard, chat ---
 (function initApp() {
   try {
     const authSection = document.getElementById('auth-section');
     const pendingSection = document.getElementById('pending-section');
     const appSection = document.getElementById('app-section');
+    const floatingThemeBtn = document.getElementById('theme-toggle');
     const adminPanel = document.getElementById('admin-panel');
     const pendingListEl = document.getElementById('pending-list');
     const tabPersonal = document.getElementById('tab-personal');
@@ -94,21 +103,72 @@ function reportInitError(context, err) {
     const confirmTypeIncome = document.getElementById('confirm-type-income');
     const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
     const confirmSaveBtn = document.getElementById('confirm-save-btn');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsOverlay = document.getElementById('settings-overlay');
+    const statIncome = document.getElementById('stat-income');
+    const statExpense = document.getElementById('stat-expense');
+    const statBalance = document.getElementById('stat-balance');
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const viewPanels = {
+      chat: document.getElementById('view-chat'),
+      dashboard: document.getElementById('view-dashboard'),
+      history: document.getElementById('view-history')
+    };
 
     if (!authSection || !pendingSection || !appSection || !adminPanel || !pendingListEl ||
         !tabPersonal || !tabBusiness || !segmentIndicator || !chatFeed || !chatForm ||
-        !chatInput || !confirmOverlay) {
+        !confirmOverlay || !settingsBtn || !settingsOverlay) {
       throw new Error('মূল app-এর কোনো element পাওয়া যায়নি');
     }
+
+    function categoryIcon(category) {
+      return CATEGORY_ICONS[category] || '📌';
+    }
+
+    function populateCategorySelect() {
+      confirmCategory.innerHTML = '';
+      Object.keys(CATEGORY_ICONS).forEach((cat) => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = CATEGORY_ICONS[cat] + ' ' + cat;
+        confirmCategory.appendChild(opt);
+      });
+    }
+    populateCategorySelect();
 
     function showOnly(section) {
       [authSection, pendingSection, appSection].forEach(s => s.classList.add('hidden'));
       section.classList.remove('hidden');
+      // main app-এ থাকলে floating theme button লুকানো — settings panel-ই এখন এটার জায়গা
+      if (floatingThemeBtn) floatingThemeBtn.classList.toggle('hidden', section === appSection);
     }
 
     function currentLedger() {
       return tabBusiness.classList.contains('active') ? 'business' : 'personal';
     }
+
+    function getBDDateString() {
+      return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
+    }
+
+    // ================= Settings panel =================
+    settingsBtn.addEventListener('click', () => settingsOverlay.classList.remove('hidden'));
+    settingsOverlay.addEventListener('click', (e) => {
+      if (e.target === settingsOverlay) settingsOverlay.classList.add('hidden');
+    });
+
+    // ================= Bottom nav (view switching) =================
+    navButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const view = btn.dataset.view;
+        navButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        Object.keys(viewPanels).forEach((key) => {
+          if (viewPanels[key]) viewPanels[key].classList.toggle('hidden', key !== view);
+        });
+        chatForm.classList.toggle('hidden', view !== 'chat');
+      });
+    });
 
     // ================= Admin: pending approvals =================
     async function loadPendingRequests() {
@@ -172,18 +232,23 @@ function reportInitError(context, err) {
       }
     });
 
-    // ================= Chat feed =================
-    let unsubscribeFeed = null;
+    // ================= Unified ledger data: feed + dashboard =================
+    let unsubscribeLedger = null;
+    let currentEntries = [];
 
-    function subscribeToFeed(ledgerType, uid) {
-      if (unsubscribeFeed) {
-        unsubscribeFeed();
-        unsubscribeFeed = null;
+    function subscribeToLedger(ledgerType, uid) {
+      if (unsubscribeLedger) {
+        unsubscribeLedger();
+        unsubscribeLedger = null;
       }
       const path = ledgerType === 'personal' ? `personal/${uid}` : 'business';
-      const q = query(ref(db, path), orderByChild('date'), limitToLast(50));
-      unsubscribeFeed = onValue(q, (snapshot) => {
-        renderFeed(snapshot);
+      unsubscribeLedger = onValue(ref(db, path), (snapshot) => {
+        currentEntries = [];
+        snapshot.forEach((child) => {
+          currentEntries.push(child.val());
+        });
+        renderFeed();
+        renderDashboard();
       }, (err) => {
         chatFeed.innerHTML = '';
         const errNote = document.createElement('div');
@@ -193,26 +258,26 @@ function reportInitError(context, err) {
       });
     }
 
-    function renderFeed(snapshot) {
+    function renderFeed() {
       chatFeed.innerHTML = '';
-      if (!snapshot.exists()) {
+      if (currentEntries.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'empty-note';
         empty.textContent = 'এখনো কোনো হিসাব যোগ হয়নি। নিচে লিখে শুরু করো।';
         chatFeed.appendChild(empty);
         return;
       }
-      const entries = [];
-      snapshot.forEach((child) => {
-        entries.push(child.val());
-      });
-      entries.reverse();
-      entries.forEach((entry) => chatFeed.appendChild(buildEntryEl(entry)));
+      const recent = currentEntries.slice(-50).slice().reverse();
+      recent.forEach((entry) => chatFeed.appendChild(buildEntryEl(entry)));
     }
 
     function buildEntryEl(entry) {
       const item = document.createElement('div');
       item.className = 'entry-item ' + (entry.type === 'income' ? 'income' : 'expense');
+
+      const iconEl = document.createElement('div');
+      iconEl.className = 'entry-icon';
+      iconEl.textContent = categoryIcon(entry.category);
 
       const main = document.createElement('div');
       main.className = 'entry-main';
@@ -229,9 +294,29 @@ function reportInitError(context, err) {
       amountEl.className = 'entry-amount';
       amountEl.textContent = (entry.type === 'income' ? '+' : '-') + '৳' + entry.amount;
 
+      item.appendChild(iconEl);
       item.appendChild(main);
       item.appendChild(amountEl);
       return item;
+    }
+
+    function renderDashboard() {
+      if (!statIncome || !statExpense || !statBalance) return;
+      const currentMonth = getBDDateString().slice(0, 7); // "YYYY-MM"
+      let monthlyIncome = 0, monthlyExpense = 0, balance = 0;
+
+      currentEntries.forEach((entry) => {
+        const amt = Number(entry.amount) || 0;
+        balance += entry.type === 'income' ? amt : -amt;
+        if (typeof entry.date === 'string' && entry.date.slice(0, 7) === currentMonth) {
+          if (entry.type === 'income') monthlyIncome += amt;
+          else monthlyExpense += amt;
+        }
+      });
+
+      statIncome.textContent = '৳' + monthlyIncome.toLocaleString('en-IN');
+      statExpense.textContent = '৳' + monthlyExpense.toLocaleString('en-IN');
+      statBalance.textContent = '৳' + balance.toLocaleString('en-IN');
     }
 
     // ================= Personal/Business toggle =================
@@ -241,7 +326,7 @@ function reportInitError(context, err) {
       tabBusiness.classList.remove('active');
       segmentIndicator.classList.remove('business');
       const user = auth.currentUser;
-      if (user) subscribeToFeed('personal', user.uid);
+      if (user) subscribeToLedger('personal', user.uid);
     });
     tabBusiness.addEventListener('click', () => {
       if (tabBusiness.classList.contains('active')) return;
@@ -249,7 +334,7 @@ function reportInitError(context, err) {
       tabPersonal.classList.remove('active');
       segmentIndicator.classList.add('business');
       const user = auth.currentUser;
-      if (user) subscribeToFeed('business', user.uid);
+      if (user) subscribeToLedger('business', user.uid);
     });
 
     // ================= Send message → Worker → confirm card =================
@@ -308,7 +393,7 @@ function reportInitError(context, err) {
     confirmSaveBtn.addEventListener('click', async () => {
       const amount = parseFloat(confirmAmount.value);
       const type = confirmTypeIncome.classList.contains('active') ? 'income' : 'expense';
-      const category = confirmCategory.value.trim();
+      const category = confirmCategory.value;
       const date = confirmDate.value;
       const note = confirmNote.value.trim();
 
@@ -396,7 +481,7 @@ function reportInitError(context, err) {
     // ================= Auth state observer =================
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        if (unsubscribeFeed) { unsubscribeFeed(); unsubscribeFeed = null; }
+        if (unsubscribeLedger) { unsubscribeLedger(); unsubscribeLedger = null; }
         showOnly(authSection);
         return;
       }
@@ -415,7 +500,7 @@ function reportInitError(context, err) {
           } else {
             adminPanel.classList.add('hidden');
           }
-          subscribeToFeed(currentLedger(), user.uid);
+          subscribeToLedger(currentLedger(), user.uid);
         } else {
           showOnly(pendingSection);
         }
