@@ -114,7 +114,7 @@ function reportInitError(context, err) {
     const statMonthLabel = document.getElementById('stat-month-label');
     const sparklineChart = document.getElementById('sparkline-chart');
     const sparklineLabels= document.getElementById('sparkline-labels');
-    const navButtons     = document.querySelectorAll('.nav-btn');
+    const navButtons     = document.querySelectorAll('.view-tab-btn');
     const viewPanels     = {
       home:    document.getElementById('view-home'),
       history: document.getElementById('view-history')
@@ -182,7 +182,7 @@ function reportInitError(context, err) {
       if (e.target === settingsOverlay) settingsOverlay.classList.add('hidden');
     });
 
-    // ===== Bottom nav view switching =====
+    // ===== View tab switching =====
     navButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
         const view = btn.dataset.view;

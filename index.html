@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#FFFFFF" id="theme-color-meta">
 <title>Myhisab</title>
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Myhisab">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -63,6 +71,11 @@
       <button type="button" class="segment" id="tab-business">Business</button>
     </div>
     <button type="button" id="settings-btn" class="top-settings-btn" aria-label="Settings">⚙️</button>
+  </div>
+  <!-- View tab bar — inline, no bottom nav -->
+  <div class="view-tab-bar">
+    <button type="button" class="view-tab-btn active" data-view="home">হোম</button>
+    <button type="button" class="view-tab-btn" data-view="history">ইতিহাস</button>
   </div>
 
   <!-- View: Home (Dashboard + Feed) -->
@@ -143,16 +156,6 @@
     <button type="submit" class="send-btn" id="chat-send-btn" aria-label="Send">➤</button>
   </form>
 
-  <!-- Bottom nav -->
-  <nav class="bottom-nav">
-    <button type="button" class="nav-btn active" data-view="home">
-      <span class="nav-icon">◉</span><span class="nav-label">হোম</span>
-    </button>
-    <button type="button" class="nav-btn" data-view="history">
-      <span class="nav-icon">◷</span><span class="nav-label">ইতিহাস</span>
-    </button>
-  </nav>
-
   <!-- Settings bottom sheet -->
   <div class="settings-overlay hidden" id="settings-overlay">
     <div class="settings-card">
@@ -199,5 +202,12 @@
 </div>
 
 <script type="module" src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
 </body>
 </html>
