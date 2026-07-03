@@ -1,45 +1,41 @@
-// Myhisab Service Worker — cache-first for static assets, network-first for Firebase
-const CACHE_NAME = 'myhisab-v1';
+// Myhisab Service Worker v3 — GitHub Pages /myhisab/
+const CACHE_NAME = 'myhisab-v3';
+const BASE = '/myhisab';
 
-// Static assets to pre-cache on install
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/app.js',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  BASE + '/',
+  BASE + '/index.html',
+  BASE + '/style.css',
+  BASE + '/app.js',
+  BASE + '/manifest.json',
+  BASE + '/icon-192.png',
+  BASE + '/icon-512.png'
 ];
 
-// Install: pre-cache static shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// Activate: clear old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch strategy:
-// • Firebase / Cloudflare Worker / googleapis → always network (realtime data)
-// • Everything else → cache-first with network fallback
 self.addEventListener('fetch', (event) => {
-  const url = event.request.url;
-
-  // Skip non-GET
   if (event.request.method !== 'GET') return;
 
-  // Network-only for external API calls
+  const url = event.request.url;
+
+  // Always network for Firebase + external APIs
   const isExternal =
     url.includes('firebasedatabase.app') ||
     url.includes('firebaseio.com') ||
@@ -47,7 +43,8 @@ self.addEventListener('fetch', (event) => {
     url.includes('securetoken.googleapis.com') ||
     url.includes('workers.dev') ||
     url.includes('fonts.googleapis.com') ||
-    url.includes('fonts.gstatic.com');
+    url.includes('fonts.gstatic.com') ||
+    url.includes('gstatic.com');
 
   if (isExternal) {
     event.respondWith(fetch(event.request));
@@ -59,16 +56,16 @@ self.addEventListener('fetch', (event) => {
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
       return fetch(event.request).then((response) => {
-        // Cache valid responses
         if (response && response.status === 200 && response.type === 'basic') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then((cache) =>
+            cache.put(event.request, response.clone())
+          );
         }
         return response;
       }).catch(() => {
-        // Offline fallback — serve index.html for navigation requests
+        // Offline fallback
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match(BASE + '/index.html');
         }
       });
     })
