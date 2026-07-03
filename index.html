@@ -12,9 +12,8 @@
 </head>
 <body>
 
-<!-- শুধু auth/pending screen-এ দেখা যায়, main app-এ ঢুকলে settings panel-ই এটার জায়গা নেয় -->
+<!-- শুধু auth/pending screen-এ দেখা যায় -->
 <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
-
 <div class="brand" id="brand">Myhisab</div>
 <div class="tagline" id="tagline">কথায় কথায় হিসাব</div>
 
@@ -29,7 +28,6 @@
     <button type="submit" class="btn-primary">লগইন করো</button>
     <button type="button" class="link-btn" id="show-signup-btn">নতুন? অ্যাকাউন্ট তৈরি করো</button>
   </form>
-
   <form id="signup-form" class="hidden">
     <label for="signup-name">তোমার নাম</label>
     <input type="text" id="signup-name" autocomplete="name" required>
@@ -44,48 +42,116 @@
   </form>
 </div>
 
-<!-- অবস্থা ২: login হয়েছে কিন্তু admin approve করেনি -->
+<!-- অবস্থা ২: pending -->
 <div id="pending-section" class="card hidden">
   <div class="pending-icon">⏳</div>
   <p class="pending-text">Account তৈরি হয়ে গেছে।<br>এখন admin approve করলেই ভেতরে ঢুকতে পারবে।</p>
   <button class="logout-btn" id="pending-logout-btn">লগআউট</button>
 </div>
 
-<!-- অবস্থা ৩: headerless main app -->
+<!-- অবস্থা ৩: main app -->
 <div id="app-section" class="app-wrap hidden">
 
-  <button type="button" id="settings-btn" class="settings-btn" aria-label="Settings">⚙️</button>
-
-  <div class="segmented-toggle" id="ledger-toggle">
-    <div class="segment-indicator" id="segment-indicator"></div>
-    <button type="button" class="segment active" id="tab-personal">Personal</button>
-    <button type="button" class="segment" id="tab-business">Business</button>
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="app-name-small">Myhisab</span>
+    </div>
+    <div class="segmented-toggle" id="ledger-toggle">
+      <div class="segment-indicator" id="segment-indicator"></div>
+      <button type="button" class="segment active" id="tab-personal">Personal</button>
+      <button type="button" class="segment" id="tab-business">Business</button>
+    </div>
+    <button type="button" id="settings-btn" class="top-settings-btn" aria-label="Settings">⚙️</button>
   </div>
 
-  <!-- Dashboard — সবসময় দেখা যায় -->
-  <div class="dashboard-grid" id="view-dashboard">
-    <div class="stat-card income">
-      <div class="stat-label">এই মাসের আয়</div>
-      <div class="stat-value" id="stat-income">৳0</div>
+  <!-- View: Home (Dashboard + Feed) -->
+  <div class="view-panel" id="view-home">
+
+    <!-- Premium Dashboard -->
+    <div class="dashboard-wrap">
+      <!-- Balance hero -->
+      <div class="balance-hero">
+        <div class="balance-label">বর্তমান ব্যালেন্স</div>
+        <div class="balance-amount" id="stat-balance">৳0</div>
+        <div class="balance-sub" id="stat-month-label">জুলাই ২০২৬</div>
+      </div>
+      <!-- 2-col stat row -->
+      <div class="stat-row">
+        <div class="stat-pill income-pill">
+          <div class="stat-pill-icon">↑</div>
+          <div class="stat-pill-body">
+            <div class="stat-pill-label">আয়</div>
+            <div class="stat-pill-val" id="stat-income">৳0</div>
+          </div>
+        </div>
+        <div class="stat-pill expense-pill">
+          <div class="stat-pill-icon">↓</div>
+          <div class="stat-pill-body">
+            <div class="stat-pill-label">খরচ</div>
+            <div class="stat-pill-val" id="stat-expense">৳0</div>
+          </div>
+        </div>
+      </div>
+      <!-- Sparkline bar chart -->
+      <div class="sparkline-wrap">
+        <div class="sparkline-title">শেষ ৭ দিনের খরচ</div>
+        <div class="sparkline-chart" id="sparkline-chart"></div>
+        <div class="sparkline-labels" id="sparkline-labels"></div>
+      </div>
     </div>
-    <div class="stat-card expense">
-      <div class="stat-label">এই মাসের খরচ</div>
-      <div class="stat-value" id="stat-expense">৳0</div>
+
+    <!-- Recent entries header -->
+    <div class="section-header">
+      <span class="section-title">সাম্প্রতিক</span>
     </div>
-    <div class="stat-card balance">
-      <div class="stat-label">বর্তমান ব্যালেন্স</div>
-      <div class="stat-value" id="stat-balance">৳0</div>
-    </div>
+    <div class="chat-feed" id="chat-feed"></div>
   </div>
 
-  <!-- Chat feed — dashboard-এর ঠিক নিচে -->
-  <div class="chat-feed" id="chat-feed"></div>
+  <!-- View: History -->
+  <div class="view-panel hidden" id="view-history">
+    <!-- Filter tabs -->
+    <div class="history-filter-bar">
+      <button type="button" class="hf-btn active" data-hfilter="day">দিন</button>
+      <button type="button" class="hf-btn" data-hfilter="month">মাস</button>
+      <button type="button" class="hf-btn" data-hfilter="year">বছর</button>
+    </div>
+    <!-- Period navigator -->
+    <div class="period-nav">
+      <button type="button" class="period-arrow" id="period-prev">‹</button>
+      <span class="period-label" id="period-label">—</span>
+      <button type="button" class="period-arrow" id="period-next">›</button>
+    </div>
+    <!-- Summary bar -->
+    <div class="history-summary" id="history-summary">
+      <div class="hs-pill green"><span id="hs-income">৳0</span><span class="hs-lbl">আয়</span></div>
+      <div class="hs-pill red"><span id="hs-expense">৳0</span><span class="hs-lbl">খরচ</span></div>
+      <div class="hs-pill gold"><span id="hs-net">৳0</span><span class="hs-lbl">নেট</span></div>
+    </div>
+    <!-- Trend chart -->
+    <div class="trend-wrap" id="trend-wrap">
+      <svg class="trend-svg" id="trend-svg" viewBox="0 0 320 80" preserveAspectRatio="none"></svg>
+      <div class="trend-x-labels" id="trend-x-labels"></div>
+    </div>
+    <!-- History list -->
+    <div class="history-list" id="history-list"></div>
+  </div>
 
-  <!-- Text input bar — fixed at bottom -->
+  <!-- Chat input bar — always fixed at bottom -->
   <form id="chat-form" class="chat-input-bar">
     <input type="text" id="chat-input" placeholder="যেমন: ৫০ টাকার চা খেয়েছি" autocomplete="off" required>
     <button type="submit" class="send-btn" id="chat-send-btn" aria-label="Send">➤</button>
   </form>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <button type="button" class="nav-btn active" data-view="home">
+      <span class="nav-icon">◉</span><span class="nav-label">হোম</span>
+    </button>
+    <button type="button" class="nav-btn" data-view="history">
+      <span class="nav-icon">◷</span><span class="nav-label">ইতিহাস</span>
+    </button>
+  </nav>
 
   <!-- Settings bottom sheet -->
   <div class="settings-overlay hidden" id="settings-overlay">
@@ -94,17 +160,14 @@
         <span class="who" id="who-name"></span>
         <span class="role-badge" id="who-role"></span>
       </div>
-
       <button type="button" class="settings-row" id="theme-toggle-row">
         <span>থিম</span>
         <span id="theme-toggle-label">🌙 Dark Mode</span>
       </button>
-
       <div class="admin-panel hidden" id="admin-panel">
         <div class="admin-panel-title">Pending Approvals</div>
         <div id="pending-list"></div>
       </div>
-
       <button type="button" class="logout-btn" id="app-logout-btn">লগআউট</button>
     </div>
   </div>
@@ -136,6 +199,5 @@
 </div>
 
 <script type="module" src="app.js"></script>
-
 </body>
 </html>
